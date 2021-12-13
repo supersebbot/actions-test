@@ -9,12 +9,10 @@ package main
 
 import (
 	"os"
-	"time"
 )
 
 func main() {
-	currentTime := time.Now()
-	d1 := []byte(currentTime.String())
+	d1 := []byte("yolo")
 	err := os.WriteFile("./dat1", d1, 0644)
 	if err != nil {
 		panic("yolo")
