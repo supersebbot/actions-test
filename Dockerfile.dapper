@@ -1,0 +1,15 @@
+FROM golang:1.16.9-alpine3.14
+
+ARG DAPPER_HOST_ARCH
+ENV ARCH $DAPPER_HOST_ARCH
+
+RUN apk -U add bash
+
+ENV DAPPER_ENV REPO TAG DRONE_TAG
+ENV DAPPER_SOURCE /go/src/github.com/superseb/actions-test
+ENV DAPPER_OUTPUT ./dat1
+ENV HOME ${DAPPER_SOURCE}
+WORKDIR ${DAPPER_SOURCE}
+
+ENTRYPOINT ["./scripts/entry"]
+CMD ["go-generate"]
