@@ -1,4 +1,4 @@
-name: Create RC tag
+name: Create tag
 on:
   workflow_dispatch:
     inputs:
@@ -7,7 +7,7 @@ on:
         description: "What RC tag needs to be created"
 jobs:
   tag:
-    name: Add release tag
+    name: Add tag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v5.0.0
@@ -15,10 +15,42 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const tag = '${{ github.event.inputs.tag }}';
+            const sha = '${{ github.sha }}';
+
+            const tag_major_minor = /^(v\d+\.\d+)/.exec(tag);
+            if(!tag_major_minor || tag_major_minor.length !== 2){
+              return core.setFailed(`The tag is not a valid semantic version. tag: ${tag}`);
+            }
+
+            const branch = '${{ github.ref_name }}';
+            const branch_major_minor = /^release\/(v\d+\.\d+)/.exec(branch);
+
+            if(!branch_major_minor || branch_major_minor.length !== 2){
+              return core.setFailed(`The branch version is not a valid semantic version. tag: ${tag}`);
+            }
+
+
+            if(`${branch_major_minor[1]}` !== `${tag_major_minor[1]}`) {
+              return core.setFailed(`the tag major minor ${tag_major_minor[1]} does not match branch major minor ${branch_major_minor[1]}`);
+            }
+
+            core.info(`the tag major minor ${tag_major_minor[1]} matches branch major minor ${branch_major_minor[1]}`);
+
+            try {
+              const resp = await github.rest.git.getRef({...context.repo, ref: `tags/${tag}`});
+              return core.setFailed(`the tag ${tag} already exists on ${resp.data.object.type} ${resp.data.object.sha}`);
+            } catch(err) {
+              if(err.status !== 404){
+                throw err;
+              }
+            }
+
+            core.info(`the tag ${tag} does not exist yet`);
+            core.info(`creating the tag ${tag} on the commit ${sha}`);
 
             github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: `refs/tags/${tag}`,
-              sha: context.sha
+              sha: `${sha}`
             })
