@@ -1,0 +1,24 @@
+name: Create RC tag
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        type: string
+        description: "What RC tag needs to be created"
+jobs:
+  tag:
+    name: Add release tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v5.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = '${{ github.event.inputs.tag }}';
+
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${tag}`,
+              sha: context.sha
+            })
