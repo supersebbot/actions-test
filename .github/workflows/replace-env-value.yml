@@ -78,3 +78,4 @@ jobs:
         if: ${{ env.changes_exist == 'true' }}
         run: |
           echo "Pull Request URL - ${{ steps.cpr.outputs.result }}"
+          echo "::notice file=.github,line=1,col=1::Pull Request URL - ${{ steps.cpr.outputs.result }}"
