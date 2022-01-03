@@ -6,6 +6,10 @@ on:
         type: string
         description: "What UI tags needs to be used"
 
+permissions:
+  contents: read
+  pull-requests: write
+
 env:
   INPUT_UITAG: ${{ github.event.inputs.uitag }}
 

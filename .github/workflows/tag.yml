@@ -5,6 +5,10 @@ on:
       tag:
         type: string
         description: "What RC tag needs to be created"
+
+permissions:
+  contents: write
+
 jobs:
   tag:
     name: Add release tag

@@ -11,6 +11,9 @@ on:
       envvalue:
         type: string
         description: "What environment variable value needs to be used?"
+permissions:
+  contents: read
+  pull-requests: write
 
 env:
   INPUT_FILEPATH: ${{ github.event.inputs.filepath }}

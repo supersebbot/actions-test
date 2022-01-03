@@ -1,5 +1,8 @@
 name: Go Generate using github-script
 on: workflow_dispatch
+permissions:
+  contents: read
+  pull-requests: write
 jobs:
   go-generate:
     runs-on: ubuntu-latest
