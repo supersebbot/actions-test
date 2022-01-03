@@ -12,7 +12,7 @@ on:
         type: string
         description: "What environment variable value needs to be used?"
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 env:
