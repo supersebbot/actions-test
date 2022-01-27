@@ -1,0 +1,36 @@
+name: Run python script and add output as comment
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  run-python-script-add-output-comment:
+    name: Run python script and add output as comment
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - run: pip install requests natsort
+    - name: Run tests
+      run: |
+        python check-new-k8s-versions.py > py.output
+        output="$(cat py.output)"
+        output="${output//$'\n'/\\n}"
+        output="${output// / }"     # replace regular space with 'En Space'
+        echo "::set-output name=run-python-script::$output"
+      id: run_script
+    - uses: actions/github-script@v5.0.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const output = '${{ steps.run_script.outputs.run-python-script }}'
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
