@@ -7,26 +7,35 @@ on:
   pull_request:
     branches:
       - main
-    types: [closed]
+    types:
+      - opened
+      - closed
+      - synchronize
+      - ready_for_review
+      - review_requested
 
 jobs:
   check-merge-conflicts:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
     - uses: actions/github-script@v5.0.0
+      id: cmc
       with:
         script: |
           var prs = [];
-          const labels = ['status/has-conflicts']
-          const opts = github.rest.pulls.list({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
+          const label = 'status/has-conflicts'
+          const opts = github.rest.pulls.list.endpoint.merge({
+            ...context.repo,
             state: 'open',
-            base: "${{ github.ref_name }}",
+            sort: 'updated',
+            direction: 'desc'
           })
-          var prs = await github.paginate(opts) 
-          for (const pr in prs) {
+          var prs = await github.paginate(opts);
+
+          let addedLabel = 0;
+          let removedLabel = 0;
+
+          await Promise.all(prs.map(async (pr) => {
             var mergeable = pr.mergeable;
             var mergeable_state = pr.mergeable_state;
             while (mergeable == null) {
@@ -38,18 +47,39 @@ jobs:
               mergeable = updatedPr.data.mergeable;
               mergeable_state = updatedPr.data.mergeable_state;
             }
-            if (!mergeable) {
+            let existingLabel = false;
+            for (const l of pr.labels) {
+              if (l.name == label) {
+                existingLabel = true;
+              }
+            }
+            if (!mergeable && !existingLabel) {
+              addedLabel++
+              console.log(`PR ${pr.number} is not mergeable and is not labeled, labeling...`);
               await github.rest.issues.addLabels({
                 ...context.repo,
                 issue_number: pr.number,
-                labels: label 
+                labels: [label]
               })
               const creator = pr.user.login
               await github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                ...context.repo,
+                issue_number: pr.number,
                 body: `Hi @${creator}, please resolve merge conflicts`
               })
             }  
-          }
+            if (mergeable && existingLabel) {
+              removedLabel++
+              console.log(`PR ${pr.number} is mergeable and is labeled, removing label...`);
+              await github.rest.issues.deleteLabel({
+                ...context.repo,
+                issue_number: pr.number,
+                name: label
+              })
+            }
+          }));
+          return `Added label to ${addedLabel} PR(s) and removed label from ${removedLabel} PR(s)`;
+    - name: Check outputs
+      run: |
+        printf '%s\n' ${{ steps.cmc.outputs.result }}
+        printf '::notice file=.github,line=1,col=1::%s\n' ${{ steps.cmc.outputs.result }}
