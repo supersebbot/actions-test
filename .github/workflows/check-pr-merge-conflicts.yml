@@ -1,0 +1,55 @@
+name: Check for merge conflicts
+permissions:
+  contents: read
+  pull-requests: write
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [closed]
+
+jobs:
+  check-merge-conflicts:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/github-script@v5.0.0
+      with:
+        script: |
+          var prs = [];
+          const labels = ['status/has-conflicts']
+          const opts = github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            base: "${{ github.ref_name }}",
+          })
+          var prs = await github.paginate(opts) 
+          for (const pr in prs) {
+            var mergeable = pr.mergeable;
+            var mergeable_state = pr.mergeable_state;
+            while (mergeable == null) {
+              await new Promise(r => setTimeout(r, 10000);
+                const updatedPr = await github.rest.pulls.get({
+                  ...context.repo,
+                  pull_number: pr.number
+                });
+                mergeable = updatedPr.data.mergeable;
+                mergeable_state = updatedPr.data.mergeable_state;
+            }
+            if (!mergeable) {
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: pr.number,
+                labels: label 
+              })
+              var creator = pr.user.login
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: "Hi @${{ creator }}, please resolve merge conflicts"
+              })
+            }  
+          }
