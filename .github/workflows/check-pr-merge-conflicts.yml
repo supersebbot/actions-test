@@ -30,13 +30,13 @@ jobs:
             var mergeable = pr.mergeable;
             var mergeable_state = pr.mergeable_state;
             while (mergeable == null) {
-              await new Promise(r => setTimeout(r, 10000);
-                const updatedPr = await github.rest.pulls.get({
-                  ...context.repo,
-                  pull_number: pr.number
-                });
-                mergeable = updatedPr.data.mergeable;
-                mergeable_state = updatedPr.data.mergeable_state;
+              await new Promise(r => setTimeout(r, 10000));
+              const updatedPr = await github.rest.pulls.get({
+                ...context.repo,
+                pull_number: pr.number
+              });
+              mergeable = updatedPr.data.mergeable;
+              mergeable_state = updatedPr.data.mergeable_state;
             }
             if (!mergeable) {
               await github.rest.issues.addLabels({
