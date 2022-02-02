@@ -44,12 +44,12 @@ jobs:
                 issue_number: pr.number,
                 labels: label 
               })
-              var creator = pr.user.login
+              const creator = pr.user.login
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: "Hi @${{ creator }}, please resolve merge conflicts"
+                body: `Hi @${creator}, please resolve merge conflicts`
               })
             }  
           }
